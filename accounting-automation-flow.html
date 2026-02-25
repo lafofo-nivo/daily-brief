@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>תרשים זרימה - מערכת קבלות אוטומטית</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      padding: 30px;
+      color: white;
+    }
+    
+    h1 { 
+      text-align: center; 
+      margin-bottom: 15px; 
+      font-size: 2em;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .subtitle { 
+      text-align: center; 
+      opacity: 0.7; 
+      margin-bottom: 40px; 
+      font-size: 0.95em;
+    }
+    
+    .flow-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    
+    /* Stage */
+    .stage {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 25px;
+      border: 2px solid rgba(255,255,255,0.1);
+      position: relative;
+      transition: all 0.3s;
+    }
+    
+    .stage:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(255,255,255,0.08);
+      transform: translateX(-5px);
+    }
+    
+    .stage-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .stage-number {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    
+    .stage-title {
+      font-size: 1.4em;
+      font-weight: bold;
+    }
+    
+    .stage-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+    
+    /* Boxes */
+    .box {
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 15px;
+      border-right: 4px solid;
+    }
+    
+    .box.input { border-color: #10b981; }
+    .box.process { border-color: #3b82f6; }
+    .box.output { border-color: #f59e0b; }
+    
+    .box-label {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    
+    .box-content {
+      font-size: 1em;
+      line-height: 1.6;
+    }
+    
+    .box-content ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .box-content li {
+      padding: 4px 0;
+      padding-right: 20px;
+      position: relative;
+    }
+    
+    .box-content li:before {
+      content: "•";
+      position: absolute;
+      right: 5px;
+      color: #6366f1;
+    }
+    
+    /* Arrow between stages */
+    .arrow-down {
+      text-align: center;
+      font-size: 2.5em;
+      color: #6366f1;
+      margin: -10px 0;
+      opacity: 0.7;
+    }
+    
+    /* Files/Folders visual */
+    .file-structure {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      line-height: 1.8;
+      margin-top: 10px;
+    }
+    
+    .file-structure .folder { color: #fbbf24; }
+    .file-structure .file { color: #60a5fa; }
+    
+    /* Legend */
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 15px;
+      font-size: 0.9em;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .legend-color {
+      width: 30px;
+      height: 20px;
+      border-radius: 5px;
+    }
+    
+    .legend-color.input { background: #10b981; }
+    .legend-color.process { background: #3b82f6; }
+    .legend-color.output { background: #f59e0b; }
+    
+    /* Highlight */
+    .highlight {
+      background: rgba(99, 102, 241, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin: 5px 5px 0 0;
+    }
+    
+    .badge.auto { background: #10b981; color: white; }
+    .badge.manual { background: #f59e0b; color: white; }
+    .badge.semi { background: #8b5cf6; color: white; }
+  </style>
+</head>
+<body>
+  <h1>🧾 מערכת קבלות אוטומטית - תרשים זרימה מלא</h1>
+  <p class="subtitle">כל שלב, כל קובץ, כל תיקייה - הכל במקום אחד</p>
+  
+  <div class="flow-container">
+    
+    <!-- Stage 1 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">1</div>
+        <div class="stage-title">איסוף תדפיסי אשראי <span class="badge auto">אוטומטי</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 מקורות</div>
+          <div class="box-content">
+            <ul>
+              <li>אתר ישראכרט</li>
+              <li>אתר מקס</li>
+              <li>אתר כאל</li>
+              <li>אתר לאומי קארד</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>credit_scraper.py</strong>
+            <ul>
+              <li>התחברות לאתרים</li>
+              <li>הורדת Excel/CSV</li>
+              <li>המרה ל-JSON אחיד</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 תפוקות</div>
+          <div class="box-content">
+            <div class="file-structure">
+<span class="folder">📁 data/2026/01/</span>
+  <span class="file">ישראכרט.xlsx</span>
+  <span class="file">מקס.xlsx</span>
+  <span class="file">כאל.xlsx</span>
+  <span class="file">raw_data.json</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="arrow-down">⬇️</div>
+    
+    <!-- Stage 2 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">2</div>
+        <div class="stage-title">תיוק אוטומטי <span class="badge auto">אוטומטי</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 קלט</div>
+          <div class="box-content">
+            <ul>
+              <li>קבצי אקסל מהסקריפר</li>
+              <li>קבלות PDF/JPG (ידני)</li>
+              <li>קבלות מדוא"ל</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>file_organizer.py</strong>
+            <ul>
+              <li>OCR לקריאת תאריך</li>
+              <li>זיהוי כרטיס אשראי</li>
+              <li>העתקה לתיקייה נכונה</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 מבנה תיקיות</div>
+          <div class="box-content">
+            <div class="file-structure">
+<span class="folder">📁 2026/</span>
+  <span class="folder">📁 01/</span>
+    <span class="folder">📁 ישראכרט/</span>
+      <span class="file">קבלה_001.pdf</span>
+      <span class="file">קבלה_002.jpg</span>
+    <span class="folder">📁 מקס/</span>
+    <span class="folder">📁 כאל/</span>
+  <span class="folder">📁 02/</span>
+  ...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="arrow-down">⬇️</div>
+    
+    <!-- Stage 3 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">3</div>
+        <div class="stage-title">הצלבה ומיפוי <span class="badge semi">חצי-אוטומטי</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 קלט</div>
+          <div class="box-content">
+            <ul>
+              <li>שורות מתדפיס אשראי</li>
+              <li>קבלות מהתיקיות</li>
+              <li>כללי match (סכום±5%, תאריך±3)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>matcher.py</strong>
+            <ul>
+              <li>השוואת סכום + תאריך</li>
+              <li>השוואת שם ספק (דמיון)</li>
+              <li>יצירת דוח התאמות</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 תפוקות</div>
+          <div class="box-content">
+            <div class="file-structure">
+<span class="file">✅ matched_2026_01.xlsx</span>
+  <span style="opacity:0.7">שורות שמצאו אסמכתא</span>
+<span class="file">❌ missing_2026_01.xlsx</span>
+  <span style="opacity:0.7">שורות ללא אסמכתא</span>
+<span class="file">⚠️ partial_2026_01.xlsx</span>
+  <span style="opacity:0.7">התאמות חלקיות</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="arrow-down">⬇️</div>
+    
+    <!-- Stage 4 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">4</div>
+        <div class="stage-title">עדכון אקסל תזרים <span class="badge auto">אוטומטי</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 קלט</div>
+          <div class="box-content">
+            <ul>
+              <li><span class="highlight">תבנית קיימת</span> (קטגוריות מוכנות)</li>
+              <li>matched_2026_01.xlsx</li>
+              <li>כללי קטגוריזציה</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>excel_updater.py</strong>
+            <ul>
+              <li>קריאת התבנית</li>
+              <li>הוספת שורות חדשות</li>
+              <li>עדכון נוסחאות</li>
+              <li>שמירה עם timestamp</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 תפוקות</div>
+          <div class="box-content">
+            <div class="file-structure">
+<span class="file">📊 expenses_2026_01_final.xlsx</span>
+  <span style="opacity:0.7">אקסל מעודכן מלא</span>
+<span class="file">📊 summary_2026_01.xlsx</span>
+  <span style="opacity:0.7">סיכום לפי קטגוריות</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="arrow-down">⬇️</div>
+    
+    <!-- Stage 5 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">5</div>
+        <div class="stage-title">סנכרון לדרייב רו"ח <span class="badge auto">אוטומטי</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 קלט</div>
+          <div class="box-content">
+            <ul>
+              <li>expenses_2026_01_final.xlsx</li>
+              <li>matched_2026_01.xlsx</li>
+              <li>תיקיית קבלות 2026/01/</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>sync_to_accountant.py</strong>
+            <ul>
+              <li>Google Drive API</li>
+              <li>העתקה לתיקייה משותפת</li>
+              <li>שמירת version history</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 מיקום</div>
+          <div class="box-content">
+            <div class="file-structure">
+<span class="folder">☁️ Google Drive/</span>
+  <span class="folder">📁 רואה חשבון/</span>
+    <span class="folder">📁 2026/01/</span>
+      <span class="file">expenses_final.xlsx</span>
+      <span class="file">matched.xlsx</span>
+      <span class="folder">📁 קבלות/</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="arrow-down">⬇️</div>
+    
+    <!-- Stage 6 -->
+    <div class="stage">
+      <div class="stage-header">
+        <div class="stage-number">6</div>
+        <div class="stage-title">בקרה ואישור <span class="badge manual">ידני</span> <span class="badge auto">+ התראות</span></div>
+      </div>
+      <div class="stage-body">
+        <div class="box input">
+          <div class="box-label">📥 קלט</div>
+          <div class="box-content">
+            <ul>
+              <li>דוח קליטה מרו"ח (PDF/Excel)</li>
+              <li>missing_2026_01.xlsx</li>
+              <li>האקסל הסופי שלנו</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box process">
+          <div class="box-label">⚙️ תהליך</div>
+          <div class="box-content">
+            <strong>reconciliation.py</strong>
+            <ul>
+              <li>השוואה דוח רו"ח vs שלנו</li>
+              <li>זיהוי פערים</li>
+              <li>יצירת דוח סטטוס</li>
+            </ul>
+            <br>
+            <strong>notify.py</strong>
+            <ul>
+              <li>שליחת התראות וואטסאפ</li>
+              <li>אישור למע"מ במייל</li>
+            </ul>
+          </div>
+        </div>
+        <div class="box output">
+          <div class="box-label">📤 פעולות</div>
+          <div class="box-content">
+            <strong>אם הכל תקין:</strong>
+            <div style="background: rgba(16,185,129,0.2); padding:8px; border-radius:5px; margin:5px 0;">
+              ✅ מייל לרו"ח: "מאושר לדיווח מע"מ"
+            </div>
+            <strong>אם יש פערים:</strong>
+            <div style="background: rgba(239,68,68,0.2); padding:8px; border-radius:5px; margin:5px 0;">
+              ❌ וואטסאפ: "חסרים 5 אסמכתאות"<br>
+              📋 קובץ: gaps_2026_01.xlsx
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color input"></div>
+      <span>📥 קלט (Input)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color process"></div>
+      <span>⚙️ תהליך (Process)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color output"></div>
+      <span>📤 תפוקה (Output)</span>
+    </div>
+  </div>
+  
+  <div style="text-align:center; margin-top:30px; opacity:0.6; font-size:0.9em;">
+    🌊 נוצר על ידי Nivo | מערכת הנהלת חשבונות אוטומטית
+  </div>
+  
+</body>
+</html>

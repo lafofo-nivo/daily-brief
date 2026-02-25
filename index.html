@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nivo Dash 🌊</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --bg: #0d1117; --card-bg: #161b22; --border: #30363d; --text: #e6edf3;
+  --text-muted: #8b949e; --accent: #58a6ff; --market: #1f6feb;
+  --realestate: #238636; --youtube: #b91c1c; --jobs: #9333ea;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 2rem 1rem; text-align: center; }
+.logo { font-size: 3rem; margin-bottom: 0.5rem; }
+h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+.tagline { color: var(--text-muted); font-size: 0.9rem; }
+.container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+.filters { display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; justify-content: center; }
+.filter-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+.filter-btn:hover { border-color: var(--accent); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+.day-section { margin-bottom: 3rem; animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.day-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+.day-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-3px); border-color: #444c56; }
+.card-type { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px; }
+.card.market { border-top: 4px solid var(--market); }
+.card.realestate { border-top: 4px solid var(--realestate); }
+.card.youtube { border-top: 4px solid var(--youtube); }
+.card.jobs { border-top: 4px solid var(--jobs); }
+.card h3 { font-size: 1rem; margin-bottom: 0.8rem; font-weight: 600; color: #fff; }
+.card-content { font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; flex-grow: 1; }
+.card-footer { margin-top: 1.2rem; padding-top: 0.8rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); }
+.source { font-weight: 600; color: var(--accent); }
+footer { text-align: center; padding: 4rem 1rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+.empty-state { text-align: center; padding: 5rem 1rem; color: var(--text-muted); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #444c56; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🌊</div>
+  <h1>Nivo Intelligence Dash</h1>
+  <div class="tagline">Trading · Real Estate · Careers · Tech</div>
+</header>
+<div class="container">
+  <div class="filters" id="filters">
+    <button class="filter-btn active" onclick="filter('all')">All updates</button>
+    <button class="filter-btn" onclick="filter('market')">📈 Market</button>
+    <button class="filter-btn" onclick="filter('realestate')">🏠 Real Estate</button>
+    <button class="filter-btn" onclick="filter('jobs')">💼 Jobs</button>
+    <button class="filter-btn" onclick="filter('youtube')">📺 YouTube</button>
+  </div>
+  <div id="app"></div>
+</div>
+<footer>Powered by Nivo 🌊 &copy; 2026</footer>
+<script>
+let allData = [];
+const icons = { market: "fa-chart-line", realestate: "fa-house", youtube: "fa-play", jobs: "fa-briefcase" };
+function filter(type) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  render(type === 'all' ? allData : allData.filter(d => d.type === type));
+}
+function render(data) {
+  const app = document.getElementById("app");
+  if (!data.length) { app.innerHTML = '<div class="empty-state"><i class="fa-regular fa-face-smile" style="font-size:3rem;margin-bottom:1rem;display:block"></i>Nothing here yet. Updates start at 07:00 AM.</div>'; return; }
+  const byDate = {};
+  data.forEach(s => { if (!byDate[s.date]) byDate[s.date] = []; byDate[s.date].push(s); });
+  app.innerHTML = Object.keys(byDate).sort().reverse().map(date => `
+    <div class="day-section">
+      <div class="day-title"><i class="fa-regular fa-calendar"></i> ${new Date(date).toLocaleDateString('he-IL', {weekday:'long', day:'numeric', month:'long'})}</div>
+      <div class="grid">
+        ${byDate[date].map(s => `
+          <div class="card ${s.type}">
+            <div class="card-type"><i class="fas ${icons[s.type]}"></i> ${s.type}</div>
+            <h3>${s.title}</h3>
+            <div class="card-content">${s.content}</div>
+            <div class="card-footer">
+              <span class="source">${s.source || "Nivo"}</span>
+              <span>${s.ts ? new Date(s.ts).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : ""}</span>
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>`).join("");
+}
+fetch("summaries.json?t=" + Date.now()).then(r => r.json()).then(data => { allData = data; render(data); });
+</script>
+</body>
+</html>
