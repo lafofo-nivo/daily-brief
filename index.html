@@ -66,6 +66,13 @@ footer { text-align: center; padding: 4rem 1rem; color: var(--text-muted); font-
 <script>
 let allData = [];
 const icons = { market: "fa-chart-line", realestate: "fa-house", youtube: "fa-play", jobs: "fa-briefcase" };
+
+// Convert URLs to clickable links
+function linkify(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, '<a href="$1" target="_blank" style="color: var(--accent); text-decoration: underline;">$1</a>');
+}
+
 function filter(type) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
@@ -84,7 +91,7 @@ function render(data) {
           <div class="card ${s.type}">
             <div class="card-type"><i class="fas ${icons[s.type]}"></i> ${s.type}</div>
             <h3>${s.title}</h3>
-            <div class="card-content">${s.content}</div>
+            <div class="card-content">${linkify(s.content)}</div>
             <div class="card-footer">
               <span class="source">${s.source || "Nivo"}</span>
               <span>${s.ts ? new Date(s.ts).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : ""}</span>
